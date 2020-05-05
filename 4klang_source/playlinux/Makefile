@@ -1,15 +1,20 @@
-.PHONY: clean 4klang.o
+.PHONY: clean 4klang.o 4klang.asm
 
 .DEFAULT_GOAL := 4klangrender
 
 4klang.asm: ../4klang.asm
 	cp ../4klang.asm .
+	sed 's/popad/    \; popad\n    pop rdi\n    pop rsi\n    pop rbp\n    pop rsp\n    pop rbx\n    pop rdx\n    pop rcx\n    pop rax\n\n/g' -i "$@"
+	sed 's/pushad/    \; pushad\n    pop rax\n    pop rcx\n    pop rdx\n    pop rbx\n    pop rsp\n    pop rbp\n    pop rsi\n    pop rdi\n\n/g' -i "$@"
+	sed 's/bits/bits 64 \;/' -i "$@"
+	sed -r 's/push[[:space:]]+e/push r/g' -i "$@"
+	sed -r 's/pop[[:space:]]+e/pop r/g' -i "$@"
 
 4klang.inc: ../4klang.inc
 	sed -e 's/\;\%define SINGLE_TICK_RENDERING/\%define SINGLE_TICK_RENDERING/;s/\;\%define AUTHORING/\%define AUTHORING/' ../4klang.inc > 4klang.inc
 
 4klang.o: 4klang.asm 4klang.inc
-	yasm -f elf64 -o "$@" "$<"
+	yasm -m amd64 -f elf64 -o "$@" "$<"
 
 4klangrender: 4klang.o 4klangrender.c
 	tcc 4klangrender.c 4klang.o -o "$@"
